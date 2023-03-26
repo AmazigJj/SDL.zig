@@ -1440,6 +1440,33 @@ pub const JoyButtonEvent = struct {
     }
 };
 
+pub const JoyBatteryEvent = struct {
+    pub const BatteryLevel = enum(i8) {
+        unknown = c.SDL_JOYSTICK_POWER_UNKNOWN,
+        empty = c.SDL_JOYSTICK_POWER_EMPTY,
+		low = c.SDL_JOYSTICK_POWER_LOW,
+		medium = c.SDL_JOYSTICK_POWER_MEDIUM,
+		full = c.SDL_JOYSTICK_POWER_FULL,
+		max = c.SDL_JOYSTICK_POWER_MAX
+    };
+
+    timestamp: u32,
+    joystick_id: c.SDL_JoystickID,
+    level: BatteryLevel,
+
+    pub fn fromNative(native: c.SDL_JoyBatteryEvent) JoyBatteryEvent {
+        switch (native.type) {
+            else => unreachable,
+            c.SDL_JOYBATTERYUPDATED => {},
+        }
+        return .{
+            .timestamp = native.timestamp,
+            .joystick_id = native.which,
+            .level = @intToEnum(BatteryLevel, native.level),
+        };
+    }
+};
+
 pub const ControllerAxisEvent = struct {
     timestamp: u32,
     joystick_id: c.SDL_JoystickID,
@@ -1558,6 +1585,7 @@ pub const Event = union(enum) {
     joy_button_up: JoyButtonEvent,
     joy_device_added: JoyDeviceEvent,
     joy_device_removed: JoyDeviceEvent,
+	joy_battery_event: JoyBatteryEvent,
     controller_axis_motion: ControllerAxisEvent,
     controller_button_down: ControllerButtonEvent,
     controller_button_up: ControllerButtonEvent,
@@ -1607,6 +1635,7 @@ pub const Event = union(enum) {
             c.SDL_JOYHATMOTION => Event{ .joy_hat_motion = JoyHatEvent.fromNative(raw.jhat) },
             c.SDL_JOYBUTTONDOWN => Event{ .joy_button_down = JoyButtonEvent.fromNative(raw.jbutton) },
             c.SDL_JOYBUTTONUP => Event{ .joy_button_up = JoyButtonEvent.fromNative(raw.jbutton) },
+			c.SDL_JOYBATTERYUPDATED => Event{ .joy_battery_event = JoyBatteryEvent.fromNative(raw.jbattery)},
             c.SDL_JOYDEVICEADDED => Event{ .joy_device_added = raw.jdevice },
             c.SDL_JOYDEVICEREMOVED => Event{ .joy_device_removed = raw.jdevice },
             c.SDL_CONTROLLERAXISMOTION => Event{ .controller_axis_motion = ControllerAxisEvent.fromNative(raw.caxis) },
